@@ -23,10 +23,13 @@ public:
     ofxSyphonClient syphonMask;
     ofxSyphonClient syphonInputCam;
     ofxSyphonServer syphonOutput;
+    
     ofxFaceTrackerThreaded camTracker;
+    ofxFaceTracker srcTracker;
     ofVideoGrabber cam;
     
-    ofxFaceTracker srcTracker;
+    
+//    ofxFaceTrackerThreaded srcTracker;
     ofImage src;
     vector<ofVec2f> srcPoints;
     vector<ofVec2f> inputSrcPoints;
@@ -39,13 +42,13 @@ public:
     ofFbo syphonMaskFbo;
     
     
-            ofImage imageCopy;
+    ofImage imageCopy;
     ofImage maskCopy;
-        ofPoint camSize;
+    ofPoint camSize;
     
     ofFbo  fboSyphonIn;
     ofPixels pix;
-        ofPixels maskPix;
+    ofPixels maskPix;
     
     
     ofDirectory faces;
@@ -53,9 +56,11 @@ public:
     int xFade;
     
     ofxPanel gui;
-
-    ofxIntSlider    texCoordX; //offset the mask on the mesh
+    
+    ofxIntSlider    texCoordX;//offset the mask on the mesh
     ofxIntSlider    texCoordY;
+    ofxIntSlider fIteration;
+    ofxIntSlider fAttempts;
     //ofxIntSlider    xFade;
     ofxFloatSlider    texCoordXScale;
     ofxFloatSlider    texCoordYScale;
@@ -64,7 +69,7 @@ public:
     ofxIntSlider    cloneStrength;
     ofxToggle        showMaskSource; //pick if syphon or the list of faces in the folder is a mask source
     ofxToggle        syphonMaskSource;
-
+    
     
     bool drawGui;
     bool screenShot;

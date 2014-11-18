@@ -1,0 +1,13 @@
+<Panel>
+	<txCoordX_offset>0</txCoordX_offset>
+	<face_Iteration>25</face_Iteration>
+	<face_Attempts>4</face_Attempts>
+	<txCoordY_offset>0</txCoordY_offset>
+	<txCoordX_scale>1</txCoordX_scale>
+	<txCoordY_scale>1</txCoordY_scale>
+	<Noise_Speed>0</Noise_Speed>
+	<Noise_scale>40</Noise_scale>
+	<Clone_Strength>16</Clone_Strength>
+	<Show_Mask_Source>0</Show_Mask_Source>
+	<Syphon_Mask_Source>0</Syphon_Mask_Source>
+</Panel>
