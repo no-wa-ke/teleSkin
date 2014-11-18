@@ -127,7 +127,7 @@ void ofApp::update() {
     
     if(cloneReady) {
         
-        if(ofGetFrameNum() % 50 == 0){ // update every 50 frame... better solution needed
+        if(ofGetFrameNum() % 20 == 0){ // update every 50 frame... better solution needed
         cam.update();
         if(cam.isFrameNew()) {
             srcTracker.update(toCv(cam));
