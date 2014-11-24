@@ -17,6 +17,7 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void loadFace(string face);
     void crossFade();
+    void loadLiveCam();
     
     void keyPressed(int key);
     
@@ -35,15 +36,17 @@ public:
     vector<ofVec2f> inputSrcPoints;
     ofMesh srcMesh;
     
-    bool cloneReady;
+    bool cloneReady,camReady,rotate;
     Clone clone;
     ofFbo srcFbo, maskFbo;
     ofFbo largeFbo;
     ofFbo syphonMaskFbo;
+    ofFbo LiveCamFbo;
     
     
     ofImage imageCopy;
     ofImage maskCopy;
+    ofImage videoImage;
     ofPoint camSize;
     
     ofFbo  fboSyphonIn;
