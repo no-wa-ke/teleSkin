@@ -41,9 +41,11 @@ void ofApp::setup() {
 	maskFbo.allocate(settings);
 	srcFbo.allocate(settings);
     
-  cam.initGrabber(640, 480); //isight
-//    cam.initGrabber(768, 432); // HD cam
-    cam.setDeviceID(2);
+    
+//  cam.initGrabber(camSize.x, camSize.y); //Install
+    cam.initGrabber(640, 480); //isight
+//  cam.initGrabber(768, 432); // HD cam
+//  cam.setDeviceID(2);
     
     largeFbo.allocate(camSize.x,camSize.y);
     
@@ -110,8 +112,9 @@ void ofApp::setup() {
     syphonOutput.setName("FaceSubOutput");
     
     src.allocate(800, 800, OF_IMAGE_COLOR);
-//    cam.getTextureReference().allocate(640, 480);
-//    loadFace(faces.getPath(currentFace));
+//  cam.getTextureReference().allocate(640, 480);
+//  loadFace(faces.getPath(currentFace));
+    
 }
 //------------------------------------------------------------
 void ofApp::update() {
@@ -124,15 +127,15 @@ void ofApp::update() {
     cloneReady = camTracker.getFound();//bool from source
     
     
-
+    if(ofGetFrameNum()%30 == 0){
+        
+        loadLiveCam();
+        
+    }
     
     if(cloneReady) {
         
-        if(ofGetFrameNum()%30 == 0){
-            
-            loadLiveCam();
-            
-        }
+   
         
         ofMesh camMesh;
         camMesh = camTracker.getImageMesh();
@@ -160,7 +163,7 @@ void ofApp::update() {
         
         srcFbo.begin();
         ofClear(0, 255);
-//        
+        
 //        if(syphonMaskSource){ //bind mask
 //            syphonMask.bind();
 //            camMesh.draw();
@@ -172,11 +175,10 @@ void ofApp::update() {
 //        }
         
          //Live Cam
-//        if(srcTracker.getFound()){
             cam.getTextureReference().bind();
             camMesh.draw();
             cam.getTextureReference().unbind();
-//        }
+
         
         srcFbo.end();
         clone.setStrength(cloneStrength);
@@ -222,9 +224,9 @@ void ofApp::draw() {
     largeFbo.end();
     largeFbo.draw(0, 0, ofGetWidth(), ofGetHeight());
     
-    
+    if(srcTracker.getFound()){
     cam.draw(0,0,640/3,480/3);
-
+    }
     
     if(showMaskSource){ //monitor source
         syphonMask.draw(0, 0, 640, 360);
@@ -280,7 +282,7 @@ void ofApp::loadFace(string face){
 }
 
 //------------------------------------------------------------
-void ofApp::loadLiveCam(){
+void ofApp::loadLiveCam(){ // Live cam feed
     
     
     cam.update();
@@ -291,11 +293,9 @@ void ofApp::loadLiveCam(){
     
     if(cam.getWidth() > 0 && cam.isFrameNew()) {
         
-        ofPixels& pixels = cam.getPixelsRef();
-        
-        // next two could be replaced with one line
+        ofPixels& pixels = cam.getPixelsRef(); //buffer pixels
         ofxCv::rotate90(pixels, rotated, rotate ? 270 : 0);
-//        ofxCv:flip(rotated, rotated, 1);
+//      ofxCv:flip(rotated, rotated, 1); // suppose to align, but its actually off-setting
         Mat rotatedMat = toCv(rotated);
         
         srcTracker.update(rotatedMat);
@@ -303,7 +303,11 @@ void ofApp::loadLiveCam(){
         if(srcTracker.getFound()) {
                 srcPoints = srcTracker.getImagePoints(); // strictly pass down points after detection.
                 cout<<"Face Found"<<endl;
-            }
+            
+        
+            
+            rotated.saveImage(ofToString("face")+ofToString(".jpg"));
+        }
             else {
                 srcPoints = inputSrcPoints;
                 cout<<"Face NOT Found"<<endl;
@@ -342,10 +346,14 @@ void ofApp::keyPressed(int key){
                 
             }
             break;
+        
         case 'd':
             drawGui = !drawGui;
             break;
-            
+        
+        case 'f' :
+            ofToggleFullscreen();
+            break;
             
         case 'm':
             maskCopy.setFromPixels(maskPix);
@@ -364,9 +372,7 @@ void ofApp::keyPressed(int key){
             }
             
             break;
-            if(key == 'f') {
-                ofToggleFullscreen();
-            }
+   
     }
     
     
