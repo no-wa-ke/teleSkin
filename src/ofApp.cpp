@@ -2,6 +2,8 @@
 
 using namespace ofxCv;
 ofImage rotated;
+bool exchangePic = false;
+bool showPic = false;
 
 
 void ofApp::setup() {
@@ -16,7 +18,7 @@ void ofApp::setup() {
     gui.add ( texCoordYScale.setup("txCoordY scale", 1, 0, 4));
     gui.add ( faceNoise.setup("Noise Speed", 0.00, 0, 0.2));
     gui.add ( faceNoiseScale.setup("Noise_scale", 40, 0, 300));
-    gui.add ( cloneStrength.setup("Clone Strength", 16, 0, 30));
+    gui.add ( cloneStrength.setup("Clone Strength", 23, 0, 30));
     gui.add ( showMaskSource.setup("Show Mask Source", false));
     gui.add ( syphonMaskSource.setup("Syphon Mask Source", false));
     
@@ -60,6 +62,11 @@ void ofApp::setup() {
 	srcTracker.setup();
 	srcTracker.setIterations(3);
 	srcTracker.setAttempts(4);
+    
+    
+	imgTracker.setup();
+	imgTracker.setIterations(3);
+	imgTracker.setAttempts(4);
     
     
 	//faces.allowExt("jpg");
@@ -127,15 +134,13 @@ void ofApp::update() {
     cloneReady = camTracker.getFound();//bool from source
     
     
-    if(ofGetFrameNum()%30 == 0){
+    if(ofGetFrameNum()%80 == 0){ // update cam every 30 frames....
         
         loadLiveCam();
         
     }
-    
-    if(cloneReady) {
-        
-   
+ 
+    if(cloneReady) { // if source is ready.
         
         ofMesh camMesh;
         camMesh = camTracker.getImageMesh();
@@ -163,21 +168,29 @@ void ofApp::update() {
         
         srcFbo.begin();
         ofClear(0, 255);
-        
-//        if(syphonMaskSource){ //bind mask
-//            syphonMask.bind();
-//            camMesh.draw();
-//            syphonMask.unbind();
-//           }else{
-//        src.bind();
-//        camMesh.draw();
-//        src.unbind();
-//        }
-        
+
+/*      // default Function
+ 
+        if(syphonMaskSource){ //bind mask
+            syphonMask.bind();
+            camMesh.draw();
+            syphonMask.unbind();
+           }else{
+        src.bind();
+        camMesh.draw();
+        src.unbind();
+        }
+*/
          //Live Cam
             cam.getTextureReference().bind();
             camMesh.draw();
             cam.getTextureReference().unbind();
+        
+        if (exchangePic == true){
+            src.bind();
+            camMesh.draw();
+            src.unbind();
+        }
 
         
         srcFbo.end();
@@ -213,6 +226,7 @@ void ofApp::draw() {
     ofSetColor(255);
     
     //Draw everything into FBO so you don't have to deal with scaling other pieces...ofScale would work as well
+    
     largeFbo.begin();
 	if(src.getWidth() > 0 && cloneReady) {
 		clone.draw(0, 0);
@@ -226,6 +240,12 @@ void ofApp::draw() {
     
     if(srcTracker.getFound()){
     cam.draw(0,0,640/3,480/3);
+    }
+    
+    if(exchangePic){ // show face picture.
+        
+     src.draw(0,0,640/3,480/3);
+    
     }
     
     if(showMaskSource){ //monitor source
@@ -266,19 +286,24 @@ void ofApp::loadFace(string face){
     
 	src.loadImage(face);
     
-    cout<<"Is src allocated: " << src.bAllocated()<<endl;
+    cout<<"Is img allocated: " << src.bAllocated()<<endl;
+    
 	if(src.getWidth() > 0 && src.isAllocated()) {
-		srcTracker.update(toCv(src)); //convert source image to opencv acceptable format
-        if(srcTracker.getFound()){
-            srcPoints = srcTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
+		imgTracker.update(toCv(src)); //convert source image to opencv acceptable format
+        if(imgTracker.getFound()){
+            srcPoints = imgTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
             //srcMesh = srcTracker.getImageMesh();
-            cout<<"Face Found"<<endl;
+            cout<<"img Face Found"<<endl;
         }
         else{
             srcPoints = inputSrcPoints;
-            cout<<"Face NOT Found"<<endl;
+            cout<<"img Face Found"<<endl;
         }
 	}
+    
+    
+    
+    
 }
 
 //------------------------------------------------------------
@@ -295,23 +320,34 @@ void ofApp::loadLiveCam(){ // Live cam feed
         
         ofPixels& pixels = cam.getPixelsRef(); //buffer pixels
         ofxCv::rotate90(pixels, rotated, rotate ? 270 : 0);
-//      ofxCv:flip(rotated, rotated, 1); // suppose to align, but its actually off-setting
+        
+//      ofxCv:flip(rotated, rotated, 1); // TODO: suppose to align, but its actually off-setting
         Mat rotatedMat = toCv(rotated);
         
         srcTracker.update(rotatedMat);
         
         if(srcTracker.getFound()) {
+            
                 srcPoints = srcTracker.getImagePoints(); // strictly pass down points after detection.
                 cout<<"Face Found"<<endl;
-            
-        
-            
-            rotated.saveImage(ofToString("face")+ofToString(".jpg"));
+                rotated.saveImage(ofToString("face")+ofToString(".jpg"));
+                exchangePic = false;
         }
-            else {
-                srcPoints = inputSrcPoints;
+        else { // TODO : make this function work.
+
+            
                 cout<<"Face NOT Found"<<endl;
+            if (exchangePic == false){ // load save image instead.
+                loadFace("face.jpg");
+                exchangePic = true;
+            }else{
+//                srcPoints = inputSrcPoints;
             }
+            
+            
+
+        
+        }
             
         }
 
@@ -359,9 +395,9 @@ void ofApp::keyPressed(int key){
             maskCopy.setFromPixels(maskPix);
             src = maskCopy;
             if(src.getWidth() > 0 && src.isAllocated()) {
-                srcTracker.update(toCv(src)); //convert source image to opencv acceptable format
+                srcTracker.update(toCv(src));
                 if(srcTracker.getFound()){
-                    srcPoints = srcTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
+                    srcPoints = srcTracker.getImagePoints();
                     //srcMesh = srcTracker.getImageMesh();
                     cout<<"Face Found"<<endl;
                 }
@@ -376,4 +412,16 @@ void ofApp::keyPressed(int key){
     }
     
     
+    
 }
+
+//------------------------------------------------------------
+void ofApp::exit(){
+    
+    imgTracker.reset();
+    srcTracker.reset();
+    cam.close();
+    
+}
+
+
