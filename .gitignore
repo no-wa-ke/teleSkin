@@ -1,6 +1,8 @@
+
 WebWorkbench.mswwsettings
 packages.config
 .DS_Store
+bin/.DS_Store
 .sass-cache
 *.sublime-workspace
 *.sublime-project
