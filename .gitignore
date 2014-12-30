@@ -1,0 +1,15 @@
+WebWorkbench.mswwsettings
+packages.config
+.DS_Store
+.sass-cache
+*.sublime-workspace
+*.sublime-project
+_sgbak/
+.sass-cache/
+assets/video/
+*.mp4
+*.ogv
+*.wmv
+*.webm
+*.mov
+SyphonFaceSubstitution.xcodeproj/project.xcworkspace/xcuserdata/mty1245.xcuserdatad/UserInterfaceState.xcuserstate
