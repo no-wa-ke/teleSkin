@@ -26,6 +26,7 @@ void ofApp::setup() {
 #endif
     ofSetWindowTitle("Syphon Face Substitution");
 	ofSetVerticalSync(true);
+    ofEnableAlphaBlending();
     //ofSetFrameRate(30);
 	cloneReady = false;
     
@@ -43,13 +44,16 @@ void ofApp::setup() {
     
     
 //  cam.initGrabber(camSize.x, camSize.y); //Install
-    cam.initGrabber(640, 480); //isight
+    cam.initGrabber(640, 480); //isight 1920,1080 for CCTV. otherwise it wont work.
 //  cam.initGrabber(768, 432); // HD cam
 //  cam.setDeviceID(2);
     
     largeFbo.allocate(camSize.x,camSize.y);
     
-    camTracker.setup(); //precise configuration
+    
+//precise configuration
+    
+    camTracker.setup();
     camTracker.setHaarMinSize(175);
     camTracker.setRescale(.25);
     camTracker.setIterations(3);
@@ -112,6 +116,8 @@ void ofApp::setup() {
     syphonOutput.setName("FaceSubOutput");
     
     src.allocate(800, 800, OF_IMAGE_COLOR);
+    
+    
 //  cam.getTextureReference().allocate(640, 480);
 //  loadFace(faces.getPath(currentFace));
     
@@ -135,13 +141,10 @@ void ofApp::update() {
     
     if(cloneReady) {
         
-   
-        
         ofMesh camMesh;
         camMesh = camTracker.getImageMesh();
         camMesh.clearTexCoords();
         for(int i=0; i< srcPoints.size(); i++){
-            
             //add some offsets noise to the texture map
             camMesh.addTexCoord(ofVec2f(texCoordX +
                                         srcPoints[i].x*(texCoordXScale) +
@@ -225,14 +228,20 @@ void ofApp::draw() {
     largeFbo.draw(0, 0, ofGetWidth(), ofGetHeight());
     
     if(srcTracker.getFound()){
-    cam.draw(0,0,640/3,480/3);
+        
+    cam.draw(0,0,640/3,480/3); // show detected face
+    ofDrawBitmapString("Face Found In Front Of the TV", 20,380);
+        
+    
     }
     
     if(showMaskSource){ //monitor source
+        
         syphonMask.draw(0, 0, 640, 360);
         ofDrawBitmapString("Syphon Input", 20,20);
         src.draw(0,360, camSize.x/2, camSize.y/2);
-        ofDrawBitmapString("Found Face/Saved Mask", 20,380);
+        ofDrawBitmapString("Found Face/Saved Mask", 20,180);
+    
     }
     
     
@@ -303,8 +312,6 @@ void ofApp::loadLiveCam(){ // Live cam feed
         if(srcTracker.getFound()) {
                 srcPoints = srcTracker.getImagePoints(); // strictly pass down points after detection.
                 cout<<"Face Found"<<endl;
-            
-        
             
             rotated.saveImage(ofToString("face")+ofToString(".jpg"));
         }
