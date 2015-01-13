@@ -18,6 +18,7 @@ public:
     void loadFace(string face);
     void crossFade();
     void loadLiveCam();
+        void exit();
     
     void keyPressed(int key);
     
@@ -27,6 +28,7 @@ public:
     
     ofxFaceTrackerThreaded camTracker;
     ofxFaceTracker srcTracker;
+       ofxFaceTracker imgTracker;
     ofVideoGrabber cam;
     
     

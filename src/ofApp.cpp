@@ -2,6 +2,8 @@
 
 using namespace ofxCv;
 ofImage rotated;
+bool exchangePic = false;
+bool showPic = false;
 
 
 void ofApp::setup() {
@@ -66,6 +68,9 @@ void ofApp::setup() {
 	srcTracker.setAttempts(4);
     
     
+    imgTracker.setup();
+	imgTracker.setIterations(3);
+	imgTracker.setAttempts(4);
 	//faces.allowExt("jpg");
 	//faces.allowExt("png");
     
@@ -156,8 +161,6 @@ void ofApp::update() {
             
         }
         
-     
-
         
         maskFbo.begin();
         ofClear(0, 255);
@@ -178,9 +181,16 @@ void ofApp::update() {
 //        }
         
          //Live Cam
+        
             cam.getTextureReference().bind();
             camMesh.draw();
             cam.getTextureReference().unbind();
+        if (exchangePic == true){
+            src.bind();
+            camMesh.draw();
+            src.unbind();
+        }
+
 
         
         srcFbo.end();
@@ -195,7 +205,6 @@ void ofApp::draw() {
     ofBackground(0, 0, 0);
 	ofSetColor(255);
     ofEnableAlphaBlending();
-    
     //Draw the syphon output image to an FBO.
     ofSetColor(255);
     fboSyphonIn.begin();
@@ -216,6 +225,7 @@ void ofApp::draw() {
     ofSetColor(255);
     
     //Draw everything into FBO so you don't have to deal with scaling other pieces...ofScale would work as well
+   
     largeFbo.begin();
 	if(src.getWidth() > 0 && cloneReady) {
 		clone.draw(0, 0);
@@ -227,23 +237,45 @@ void ofApp::draw() {
     largeFbo.end();
     largeFbo.draw(0, 0, ofGetWidth(), ofGetHeight());
     
-    if(srcTracker.getFound()){
+
+    if(srcTracker.getFound()){ // show detected face
         
-    cam.draw(0,0,640/3,480/3); // show detected face
-    ofDrawBitmapString("Face Found In Front Of the TV", 20,380);
+        cam.draw(20,20,250,188);
+        ofPushMatrix();
+        ofPushStyle();
+        ofSetColor(255, 0, 0);
+        ofDrawBitmapString("On TV",40,40);
+        ofPopStyle();
+        ofTranslate(20,20);
+        ofScale(0.39, 0.39);
+        srcTracker.draw();
         
-    
+        ofPopMatrix();
+        
+        
+        
     }
     
-    if(showMaskSource){ //monitor source
+    if (exchangePic == true){// show saved image
         
-        syphonMask.draw(0, 0, 640, 360);
-        ofDrawBitmapString("Syphon Input", 20,20);
-        src.draw(0,360, camSize.x/2, camSize.y/2);
-        ofDrawBitmapString("Found Face/Saved Mask", 20,180);
-    
+        src.draw(20,20,250,188);
+        
+        ofPushMatrix();
+        
+        ofPushStyle();
+        ofSetColor(255, 0, 0);
+        ofDrawBitmapString("On TV",40,40);
+        ofPopStyle();
+        
+        ofTranslate(20,20);
+        ofScale(0.39, 0.39);
+        imgTracker.draw();
+        
+        ofPopMatrix();
+        
+        
     }
-    
+
     
     //Show/hide gui
     if(drawGui){
@@ -264,6 +296,8 @@ void ofApp::draw() {
     
         syphonOutput.publishTexture(&largeFbo.getTextureReference()); //putting this syphon bit before GUI draw seems to break GUI...
     
+
+    
 }
 
 //------------------------------------------------------------
@@ -277,15 +311,15 @@ void ofApp::loadFace(string face){
     
     cout<<"Is src allocated: " << src.bAllocated()<<endl;
 	if(src.getWidth() > 0 && src.isAllocated()) {
-		srcTracker.update(toCv(src)); //convert source image to opencv acceptable format
-        if(srcTracker.getFound()){
-            srcPoints = srcTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
+		imgTracker.update(toCv(src)); //convert source image to opencv acceptable format
+        if(imgTracker.getFound()){
+            srcPoints = imgTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
             //srcMesh = srcTracker.getImageMesh();
-            cout<<"Face Found"<<endl;
+            cout<<"img Face Found"<<endl;
         }
         else{
             srcPoints = inputSrcPoints;
-            cout<<"Face NOT Found"<<endl;
+            cout<<"img Face NOT Found"<<endl;
         }
 	}
 }
@@ -304,25 +338,37 @@ void ofApp::loadLiveCam(){ // Live cam feed
         
         ofPixels& pixels = cam.getPixelsRef(); //buffer pixels
         ofxCv::rotate90(pixels, rotated, rotate ? 270 : 0);
-//      ofxCv:flip(rotated, rotated, 1); // suppose to align, but its actually off-setting
+
         Mat rotatedMat = toCv(rotated);
         
         srcTracker.update(rotatedMat);
         
         if(srcTracker.getFound()) {
-                srcPoints = srcTracker.getImagePoints(); // strictly pass down points after detection.
-                cout<<"Face Found"<<endl;
             
+            srcPoints = srcTracker.getImagePoints(); 
+            cout<<"Face Found"<<endl;
             rotated.saveImage(ofToString("face")+ofToString(".jpg"));
+            exchangePic = false;
         }
-            else {
-                srcPoints = inputSrcPoints;
-                cout<<"Face NOT Found"<<endl;
+        else { // TODO : make this function work.
+            
+            
+            cout<<"Face NOT Found"<<endl;
+            if (exchangePic == false){ // load save image instead.
+                
+                loadFace("face.jpg");
+                
+                exchangePic = true;
+            }else{
+                //                srcPoints = inputSrcPoints;
             }
             
+            
+            
+            
         }
-
-    
+        
+    }
 
     
     
@@ -384,3 +430,14 @@ void ofApp::keyPressed(int key){
     
     
 }
+
+
+//------------------------------------------------------------
+void ofApp::exit(){
+    
+    imgTracker.reset();
+    srcTracker.reset();
+    cam.close();
+    
+}
+
