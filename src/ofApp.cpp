@@ -2,6 +2,7 @@
 
 using namespace ofxCv;
 ofImage rotated;
+ofImage infomation;
 bool exchangePic = false;
 bool showPic = false;
 int detectSec = 50;
@@ -35,7 +36,10 @@ void ofApp::setup() {
 	//ofSetDataPathRoot(".../data/");
 #endif
     ofSetWindowTitle("Syphon Face Substitution");
-	ofSetVerticalSync(true);
+	ofEnableSmoothing();
+    ofSetFrameRate(30);
+    ofSetVerticalSync(true);
+    
 
     //ofSetFrameRate(30);
 	cloneReady = false;
@@ -65,22 +69,33 @@ void ofApp::setup() {
 //precise configuration
     
     camTracker.setup();
-//  camTracker.setHaarMinSize(175);
-    camTracker.setRescale(.32);
-    camTracker.setIterations(3);
-    camTracker.setTolerance(2);
-    camTracker.setClamp(3);
-    camTracker.setAttempts(4);
+//  camTracker.setHaarMinSize(135);
+    camTracker.setRescale(.50);
+//    camTracker.setIterations(10);
+//    camTracker.setTolerance(1);
+//    camTracker.setClamp(4);
+//    camTracker.setAttempts(2);
     
-	imgTracker.setup();
-    imgTracker.setIterations(10);
-	imgTracker.setAttempts(4);
-    imgTracker.setRescale(.30);
+//	imgTracker.setup();
+//    imgTracker.setIterations(10);
+//	imgTracker.setAttempts(4);
+//    imgTracker.setRescale(.30);
     
     srcTracker.setup();
     srcTracker.setIterations(10);
-    srcTracker.setRescale(.32);
+    srcTracker.setRescale(.35);
 	srcTracker.setAttempts(4);
+    
+//    :rescale(1)
+//    ,iterations(10) // [1-25] 1 is fast and inaccurate, 25 is slow and accurate
+//    ,clamp(3) // [0-4] 1 gives a very loose fit, 4 gives a very tight fit
+//    ,tolerance(.01) // [.01-1] match tolerance
+//    ,attempts(1) // [1-4] 1 is fast and may not find faces, 4 is slow but will find faces
+//    ,failed(true)
+//    ,fcheck(true) // check for whether the tracking failed
+//    ,frameSkip(-1) // how often to skip frames. default -1
+//    ,useInvisible(true)
+//    ,age(-1)
     
     
     //alternate version where we don't use syphon input as a mask texture, but use images instead
@@ -134,8 +149,8 @@ void ofApp::setup() {
 //  cam.getTextureReference().allocate(640, 480);
 //  loadFace(faces.getPath(currentFace));
 
-    
-    trueFont.loadFont("MONACO.ttf",fSize, true, true);
+    infomation.loadImage("infomation_face.png");
+//    trueFont.loadFont("MONACO.ttf",fSize, true, true);
 }
 //------------------------------------------------------------
 void ofApp::update() {
@@ -277,16 +292,20 @@ void ofApp::draw() {
         
         // alpha is usually turned off - for speed puposes.  let's turn it on!
         ofEnableAlphaBlending();
+        ofPushStyle();
         ofSetColor(0,0,0,200);   // red, 50% transparent
         ofRect(0,0,ofGetWindowWidth(),ofGetWindowHeight());
-        ofDisableAlphaBlending();
+        ofPopStyle();
+//        ofPushMatrix();
+//        ofSetColor(225);
+//        trueFont.drawString("YOUR FACE NOT FOUND", ofGetWindowWidth()/4, ofGetWindowHeight()/2);
+//        ofPopMatrix();
         ofPushMatrix();
-        ofSetColor(225);
-        trueFont.drawString("YOUR FACE NOT FOUND", ofGetWindowWidth()/4, ofGetWindowHeight()/2);
+        
+        infomation.draw(0,0);
+       
         ofPopMatrix();
-        
-        
-        
+        ofDisableAlphaBlending();
 
     }
 
@@ -368,7 +387,7 @@ void ofApp::loadLiveCam(){ // Live cam feed
             srcPoints = srcTracker.getImagePoints(); 
             cout<<"Live Face Found"<<endl;
             
-            rotated.saveImage(ofToString("face")+ofToString(ofGetFrameNum())+ofToString(".jpg"));
+//            rotated.saveImage(ofToString("face")+ofToString(ofGetFrameNum())+ofToString(".jpg"));
            
             bInfo = false;
             

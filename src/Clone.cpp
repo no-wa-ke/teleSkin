@@ -24,7 +24,7 @@ void main() {\
 			break;\
 		}\
 	}\
-	int samples = 1 + (i - 1) * 2;\
+	int samples = 1 + (i -1 ) * 2;\
 	gl_FragColor = sum / float(samples);\
 }";
 
@@ -62,7 +62,8 @@ void Clone::setup(int width, int height) {
 }
 
 void Clone::maskedBlur(ofTexture& tex, ofTexture& mask, ofFbo& result) {
-	int k = strength;
+	
+    int k = strength;
 	
 	buffer.begin();
 	maskBlurShader.begin();
@@ -74,6 +75,7 @@ void Clone::maskedBlur(ofTexture& tex, ofTexture& mask, ofFbo& result) {
 	maskBlurShader.end();
 	buffer.end();
 	
+    
 	result.begin();
 	maskBlurShader.begin();
 	maskBlurShader.setUniformTexture("tex", buffer, 1);
@@ -83,6 +85,8 @@ void Clone::maskedBlur(ofTexture& tex, ofTexture& mask, ofFbo& result) {
 	buffer.draw(0, 0);
 	maskBlurShader.end();
 	result.end();
+    
+    
 }
 
 void Clone::setStrength(int strength) {
@@ -96,11 +100,12 @@ void Clone::update(ofTexture& src, ofTexture& dst, ofTexture& mask) {
 	buffer.begin();
 	ofPushStyle();
 	ofEnableAlphaBlending();
-	dst.draw(0, 0);
+	
 	cloneShader.begin();
 	cloneShader.setUniformTexture("src", src, 1);
-	cloneShader.setUniformTexture("srcBlur", srcBlur, 2);
 	cloneShader.setUniformTexture("dstBlur", dstBlur, 3);
+	cloneShader.setUniformTexture("srcBlur", srcBlur, 2);
+    
 	dst.draw(0, 0);
 	cloneShader.end();
 	ofDisableAlphaBlending();
