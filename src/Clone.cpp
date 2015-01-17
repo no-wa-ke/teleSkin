@@ -1,5 +1,7 @@
 #include "Clone.h"
 
+
+
 char maskBlurShaderSource[] =
 "#extension GL_ARB_texture_rectangle : enable\n"
 "uniform sampler2DRect tex, mask;\

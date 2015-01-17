@@ -4,23 +4,31 @@ using namespace ofxCv;
 ofImage rotated;
 bool exchangePic = false;
 bool showPic = false;
+int detectSec = 50;
+int recieveMsg = 0;
+bool bInfo = false;
 
 
 void ofApp::setup() {
     
+    
+    
     rotate = false;
+//  receiver.setup(PORT);
     
     //GUI--------------------
     gui.setup ("Panel");
+    gui.add (fSize.setup("fontSize",50,8,300));
     gui.add ( texCoordX.setup("txCoordX offset", 0, -250, 250));
     gui.add ( texCoordY.setup("txCoordY offset", 0, -250, 250));
     gui.add ( texCoordXScale.setup("txCoordX scale", 1, 0, 4));
     gui.add ( texCoordYScale.setup("txCoordY scale", 1, 0, 4));
     gui.add ( faceNoise.setup("Noise Speed", 0.00, 0, 0.2));
     gui.add ( faceNoiseScale.setup("Noise_scale", 40, 0, 300));
-    gui.add ( cloneStrength.setup("Clone Strength", 16, 0, 30));
+    gui.add ( cloneStrength.setup("Clone Strength", 1000, 0, 1000));
     gui.add ( showMaskSource.setup("Show Mask Source", false));
     gui.add ( syphonMaskSource.setup("Syphon Mask Source", false));
+
     
     
 #ifdef TARGET_OSX
@@ -28,7 +36,7 @@ void ofApp::setup() {
 #endif
     ofSetWindowTitle("Syphon Face Substitution");
 	ofSetVerticalSync(true);
-    ofEnableAlphaBlending();
+
     //ofSetFrameRate(30);
 	cloneReady = false;
     
@@ -46,9 +54,10 @@ void ofApp::setup() {
     
     
 //  cam.initGrabber(camSize.x, camSize.y); //Install
-    cam.initGrabber(640, 480); //isight 1920,1080 for CCTV. otherwise it wont work.
+  cam.initGrabber(640, 480); //isight
 //  cam.initGrabber(768, 432); // HD cam
-//  cam.setDeviceID(2);
+//    cam.initGrabber(1920, 1080);// HD-SDI cam
+//  cam.setDeviceID(2); //external cam
     
     largeFbo.allocate(camSize.x,camSize.y);
     
@@ -56,23 +65,23 @@ void ofApp::setup() {
 //precise configuration
     
     camTracker.setup();
-    camTracker.setHaarMinSize(175);
-    camTracker.setRescale(.25);
+//  camTracker.setHaarMinSize(175);
+    camTracker.setRescale(.32);
     camTracker.setIterations(3);
     camTracker.setTolerance(2);
     camTracker.setClamp(3);
     camTracker.setAttempts(4);
     
-	srcTracker.setup();
-	srcTracker.setIterations(3);
+	imgTracker.setup();
+    imgTracker.setIterations(10);
+	imgTracker.setAttempts(4);
+    imgTracker.setRescale(.30);
+    
+    srcTracker.setup();
+    srcTracker.setIterations(10);
+    srcTracker.setRescale(.32);
 	srcTracker.setAttempts(4);
     
-    
-    imgTracker.setup();
-	imgTracker.setIterations(3);
-	imgTracker.setAttempts(4);
-	//faces.allowExt("jpg");
-	//faces.allowExt("png");
     
     //alternate version where we don't use syphon input as a mask texture, but use images instead
 	faces.listDir("faces");
@@ -121,24 +130,26 @@ void ofApp::setup() {
     syphonOutput.setName("FaceSubOutput");
     
     src.allocate(800, 800, OF_IMAGE_COLOR);
-    
-    
+
 //  cam.getTextureReference().allocate(640, 480);
 //  loadFace(faces.getPath(currentFace));
+
     
+    trueFont.loadFont("MONACO.ttf",fSize, true, true);
 }
 //------------------------------------------------------------
 void ofApp::update() {
     
-    imageCopy.setFromPixels(pix);
     
+        
 
+    imageCopy.setFromPixels(pix);
     //no mothods to frame sync yet
     camTracker.update(toCv(imageCopy));
     cloneReady = camTracker.getFound();//bool from source
     
     
-    if(ofGetFrameNum()%30 == 0){
+    if(ofGetFrameNum()%detectSec == 0){
         
         loadLiveCam();
         
@@ -185,11 +196,15 @@ void ofApp::update() {
             cam.getTextureReference().bind();
             camMesh.draw();
             cam.getTextureReference().unbind();
-        if (exchangePic == true){
-            src.bind();
-            camMesh.draw();
-            src.unbind();
-        }
+       
+//        if (exchangePic == true){
+//            
+//            src.bind();
+//            camMesh.draw();
+//            src.unbind();
+//            bInfo = true;
+//        
+//        }
 
 
         
@@ -197,6 +212,8 @@ void ofApp::update() {
         clone.setStrength(cloneStrength);
         clone.update(srcFbo.getTextureReference(), fboSyphonIn.getTextureReference(), maskFbo.getTextureReference());
     }
+    
+
     
 }
 //------------------------------------------------------------
@@ -238,7 +255,7 @@ void ofApp::draw() {
     largeFbo.draw(0, 0, ofGetWidth(), ofGetHeight());
     
 
-    if(srcTracker.getFound()){ // show detected face
+    if(srcTracker.getFound()){ // show live cam face
         
         cam.draw(20,20,250,188);
         ofPushMatrix();
@@ -253,27 +270,24 @@ void ofApp::draw() {
         ofPopMatrix();
         
         
-        
     }
+
     
-    if (exchangePic == true){// show saved image
+    if (bInfo == true){
         
-        src.draw(20,20,250,188);
-        
+        // alpha is usually turned off - for speed puposes.  let's turn it on!
+        ofEnableAlphaBlending();
+        ofSetColor(0,0,0,200);   // red, 50% transparent
+        ofRect(0,0,ofGetWindowWidth(),ofGetWindowHeight());
+        ofDisableAlphaBlending();
         ofPushMatrix();
-        
-        ofPushStyle();
-        ofSetColor(255, 0, 0);
-        ofDrawBitmapString("On TV",40,40);
-        ofPopStyle();
-        
-        ofTranslate(20,20);
-        ofScale(0.39, 0.39);
-        imgTracker.draw();
-        
+        ofSetColor(225);
+        trueFont.drawString("YOUR FACE NOT FOUND", ofGetWindowWidth()/4, ofGetWindowHeight()/2);
         ofPopMatrix();
         
         
+        
+
     }
 
     
@@ -294,6 +308,9 @@ void ofApp::draw() {
         ofDrawBitmapString("Reload mask layer with 'm'",20,440);
     }
     
+    
+//     ofDrawBitmapString(ofToString(detectSec) ,20,400); // debug detecSec
+    
         syphonOutput.publishTexture(&largeFbo.getTextureReference()); //putting this syphon bit before GUI draw seems to break GUI...
     
 
@@ -310,10 +327,12 @@ void ofApp::loadFace(string face){
 	src.loadImage(face);
     
     cout<<"Is src allocated: " << src.bAllocated()<<endl;
-	if(src.getWidth() > 0 && src.isAllocated()) {
+	
+    if(src.getWidth() > 0 && src.isAllocated()) {
 		imgTracker.update(toCv(src)); //convert source image to opencv acceptable format
         if(imgTracker.getFound()){
             srcPoints = imgTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
+            detectSec = 160;
             //srcMesh = srcTracker.getImageMesh();
             cout<<"img Face Found"<<endl;
         }
@@ -331,8 +350,7 @@ void ofApp::loadLiveCam(){ // Live cam feed
     cam.update();
 
     
-     cout<<"Is src allocated: " << cam.getTextureReference().bAllocated()<<endl;
-    
+    cout<<"Is src allocated: " << cam.getTextureReference().bAllocated()<<endl;
     
     if(cam.getWidth() > 0 && cam.isFrameNew()) {
         
@@ -345,26 +363,25 @@ void ofApp::loadLiveCam(){ // Live cam feed
         
         if(srcTracker.getFound()) {
             
+            detectSec = 32;
+            
             srcPoints = srcTracker.getImagePoints(); 
-            cout<<"Face Found"<<endl;
-            rotated.saveImage(ofToString("face")+ofToString(".jpg"));
+            cout<<"Live Face Found"<<endl;
+            
+            rotated.saveImage(ofToString("face")+ofToString(ofGetFrameNum())+ofToString(".jpg"));
+           
+            bInfo = false;
+            
             exchangePic = false;
+       
         }
         else { // TODO : make this function work.
             
-            
-            cout<<"Face NOT Found"<<endl;
-            if (exchangePic == false){ // load save image instead.
-                
-                loadFace("face.jpg");
-                
-                exchangePic = true;
-            }else{
-                //                srcPoints = inputSrcPoints;
-            }
-            
-            
-            
+                cout<<"Live Face NOT Found"<<endl;
+        
+                bInfo = true;
+           
+
             
         }
         
@@ -408,23 +425,23 @@ void ofApp::keyPressed(int key){
             ofToggleFullscreen();
             break;
             
-        case 'm':
-            maskCopy.setFromPixels(maskPix);
-            src = maskCopy;
-            if(src.getWidth() > 0 && src.isAllocated()) {
-                srcTracker.update(toCv(src)); //convert source image to opencv acceptable format
-                if(srcTracker.getFound()){
-                    srcPoints = srcTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
-                    //srcMesh = srcTracker.getImageMesh();
-                    cout<<"Face Found"<<endl;
-                }
-                else{
-                    srcPoints = inputSrcPoints;
-                    cout<<"Face NOT Found"<<endl;
-                }
-            }
-            
-            break;
+//        case 'm':
+//            maskCopy.setFromPixels(maskPix);
+//            src = maskCopy;
+//            if(src.getWidth() > 0 && src.isAllocated()) {
+//                srcTracker.update(toCv(src)); //convert source image to opencv acceptable format
+//                if(srcTracker.getFound()){
+//                    srcPoints = srcTracker.getImagePoints(); //load the vector of points that are returned from the tracker as the proper face points
+//                    //srcMesh = srcTracker.getImageMesh();
+//                    cout<<"Face Found"<<endl;
+//                }
+//                else{
+//                    srcPoints = inputSrcPoints;
+//                    cout<<"Face NOT Found"<<endl;
+//                }
+//            }
+//            
+//            break;
    
     }
     
@@ -437,6 +454,7 @@ void ofApp::exit(){
     
     imgTracker.reset();
     srcTracker.reset();
+        
     cam.close();
     
 }

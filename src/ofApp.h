@@ -18,9 +18,10 @@ public:
     void loadFace(string face);
     void crossFade();
     void loadLiveCam();
-        void exit();
+    void exit();
     
     void keyPressed(int key);
+
     
     ofxSyphonClient syphonMask;
     ofxSyphonClient syphonInputCam;
@@ -66,6 +67,7 @@ public:
     ofxIntSlider    texCoordY;
     ofxIntSlider fIteration;
     ofxIntSlider fAttempts;
+    ofxIntSlider fSize;
     //ofxIntSlider    xFade;
     ofxFloatSlider    texCoordXScale;
     ofxFloatSlider    texCoordYScale;
@@ -93,4 +95,10 @@ public:
     int lastTagNumber;
     
     ofVideoPlayer movie; //if you want to play a movie on the face
+    
+    string typeStr;
+    
+    ofTrueTypeFont  trueFont;
+
+
 };
